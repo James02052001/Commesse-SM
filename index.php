@@ -1,3 +1,15 @@
+<?php
+include("common/connection.php");
+include("common/popup.php");
+
+global $conn;
+//Leggo l'elenco dei responsabili
+$queryResp = "SELECT * FROM `responsabile`";
+$resResp = $conn->query($queryResp);
+
+if (isset($_GET['msg']) && trim($_GET['msg']) != '')
+    mostraPopup($_GET['msg'], "Esito");
+?>
 <!doctype html>
 <html lang="en">
 
@@ -21,18 +33,18 @@
     <?php include("common/header.php") ?>
 
     <main class="p-2 d-flex text-center justify-content-center">
-
         <div class="card">
             <div class="card-header">
                 <h4 class="p-2 m-0">Registrazione Commessa</h4>
             </div>
             <div class="card-body d-flex justify-content flex-column justify-content-center">
-                <form class="mb-3 d-flex justify-content flex-column justify-content-center" action="registra.php"
-                    method="post">
+                <form class="mb-3 d-flex justify-content flex-column justify-content-center"
+                    enctype="multipart/form-data" action="registra.php" method="post">
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <label for="Cliente" class="form-label mt-2">Nome Cliente</label>
-                            <input type="text" class="form-control mb-2" name="Cliente" id="Cliente" required />
+                            <input type="text" class="form-control mb-2" name="Cliente" id="Cliente" max="255"
+                                required />
                         </div>
 
                         <div class="col-md-6">
@@ -45,14 +57,19 @@
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <label for="Motore" class="form-label mt-2">Numero Motore</label>
-                            <input type="text" class="form-control mb-2" name="Motore" id="Motore" required />
+                            <input type="text" class="form-control mb-2" name="Motore" id="Motore" max="255" required />
                         </div>
 
                         <div class="col-md-6">
                             <label for="Responsabile" class="form-label mt-2">Responsabile</label>
-                            <select class="form-control mb-2" name="Motore" id="Responsabile" required>
+                            <select class="form-control mb-2" name="Responsabile" id="Responsabile" required>
                                 <option selected> Nessuno </option>
-                                <option value="1"> Giovanni De Pascale </option>
+                                <!-- Ciclo i responsabili per scriverli nella selezione -->
+                                <?php while ($rowResp = $resResp->fetch_assoc()): ?>
+                                    <option value="<?= $rowResp['id'] ?>">
+                                        <?= $rowResp['nome'] . ' ' . $rowResp['cognome'] ?>
+                                    </option>
+                                <?php endwhile; ?>
                                 <select>
                         </div>
                     </div>
@@ -71,7 +88,7 @@
 
                     <div class="row mb-3 ps-2 pe-2">
                         <label for="file" class="form-label mt-2">Allega i file</label>
-                        <input type="file" class="form-control mb-2" name="files[]" id="file" />
+                        <input type="file" class="form-control mb-2" name="files[]" id="file" multiple />
                     </div>
 
                     <div class="row mb-3">
@@ -79,7 +96,7 @@
                             <button class="btn w-100 mt-2" onclick="location.reload();">Svuota</button>
                         </div>
                         <div class="col-md-6">
-                            <button type="submit" class="btn w-100 mt-2"> Salva </button>
+                            <input class="btn w-100 mt-2" type="submit" value="Salva" name="action">
                         </div>
                     </div>
 
