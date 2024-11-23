@@ -1,0 +1,107 @@
+:root {
+    --bs-secondary-rgb:  244, 237, 29;
+    --bs-primary-rgb: 24, 48, 125; 
+
+    --text-primary-rgb: #18307d; 
+    --text-secondary-rgb: #f4ed1d;
+
+    --gradient-primary-rgb: linear-gradient(145deg, #f4ed1d, #f9f9a3);
+    --gradient-secondary-rgb: linear-gradient(145deg, #18307d, #4f83cc);
+}
+
+*{
+    color: var(--text-primary-rgb);
+}
+  
+/** Nav Bar **/
+nav.navbar{
+    background-color: var(--text-secondary-rgb);
+}
+nav.navbar a img{
+    max-width: 70px !important;
+}
+
+.navbar-nav .nav-item{
+    padding: 2px;
+}
+
+.navbar-nav .nav-link{
+    background-color: rgba(255, 255, 255, 0.5);
+    color: var(--text-primary-rgb) !important;
+    font-weight: bolder;
+    
+    min-height: 40px;
+    min-width: 150px;
+    padding: 0px 25px !important;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+ 
+    border-bottom: 3px solid var(--text-primary-rgb);
+}
+
+.navbar-nav .nav-link.active, .navbar-nav .nav-link:hover{
+    background-color: rgba(var(--bs-primary-rgb), 0.75);
+    color: var(--text-secondary-rgb) !important;
+    
+    font-weight: bolder;
+}
+
+.navbar-toggler{
+    color: var(--text-primary-rgb);
+    font-size: 2.5rem;
+}
+
+.navbar-toggler:focus{
+    box-shadow: none;
+}
+
+@media (max-width: 576px) {
+    .navbar-nav .nav-link.active{  
+        border-bottom: 0px;
+    }
+}
+
+@media (min-width: 576px) and (max-width: 1200px) {
+    .navbar-expand-sm .navbar-nav {
+        display: ruby;
+    }
+}
+
+/** Corpo **/
+
+body{
+    /*background: linear-gradient(135deg, #2c3e50, #2980b9);*/
+    background-color: rgba(var(--bs-primary-rgb), 0.25);
+    min-height: 100vh;
+    display: flex; /* Usa Flexbox per il layout */
+    flex-direction: column; /* Allinea gli elementi in verticale */
+}
+
+main {
+    flex: 1; /* Fai sì che il main content occupi tutto lo spazio disponibile */
+}
+
+/** Piede **/
+footer{
+    background-color: var(--text-secondary-rgb);
+}
+
+/** General **/
+.btn{
+    background: var(--text-primary-rgb);
+    color: var(--text-secondary-rgb);
+
+    min-width: 150px;
+    padding: 10px 30px !important;
+
+    font-weight: bold;
+}
+
+.btn:hover{
+    background: var(--text-secondary-rgb);
+    color: var(--text-primary-rgb);
+    font-weight: bold;
+    min-width: 150px;
+}
