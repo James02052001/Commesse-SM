@@ -1,6 +1,7 @@
 <?php
 include("common/connection.php");
 include("common/popup.php");
+require_once 'lib/phpqrcode/qrlib.php';
 
 // Verifica se il numero della commessa è stato passato correttamente
 if (!isset($_GET['Commessa'])) {
@@ -35,10 +36,14 @@ if ($result->num_rows === 0) {
     exit;
 }
 
+//Prelevo i dati
 $row = $result->fetch_assoc();
 $cliente = $row['cliente'];
 $motore = $row['motore'];
 $directory = "data/$commessa/";
+
+//Genero il QR
+generaQR($directory);
 
 // Funzione per elencare i file presenti nella directory
 function elencaFile($directory)
@@ -57,6 +62,24 @@ if (is_dir($directory)) {
 //Leggo l'elenco dei responsabili
 $queryResp = "SELECT * FROM `responsabile`";
 $resResp = $conn->query($queryResp);
+
+function generaQR($tempDir)
+{
+    global $commessa;
+
+    // Ottieni l'URL corrente
+    $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http";
+    $currentURL = $protocol . "://" . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
+
+    // Genera il QR Code
+    if (!is_dir($tempDir)) {
+        mkdir($tempDir); // Crea la directory per i QR Code se non esiste
+    }
+    $fileName = $tempDir . "qr_" . md5($commessa) . ".png";
+    QRcode::png($currentURL, $fileName, QR_ECLEVEL_L, 5);
+
+    return $fileName;
+}
 ?>
 <!doctype html>
 <html lang="en">
@@ -131,11 +154,11 @@ $resResp = $conn->query($queryResp);
                                     <label for="Responsabile" class="form-label w-100 mt-2">Responsabile</label>
                                 </div>
                                 <div class="col-12 col-md-8">
-                                    <select class="form-control mb-2" name="Responsabile" id="Responsabile" required>
-                                        <option value="Nessuno" <?= (isset($_GET['responsabile']) && $_GET['responsabile'] == 'Nessuno') ? 'selected' : ''; ?>>Nessuno</option>
+                                    <select class="form-control mb-2" name="Responsabile" id="Responsabile">
+                                        <option value="Nessuno" <?= ($row['id_responsabile'] == '') ? 'selected' : ''; ?>>Nessuno</option>
                                         <!-- Ciclo i responsabili per scriverli nella selezione -->
                                         <?php while ($rowResp = $resResp->fetch_assoc()): ?>
-                                            <option value="<?= $rowResp['id'] ?>" <?= (isset($_GET['responsabile']) && $_GET['responsabile'] == $rowResp['id']) ? 'selected' : ''; ?>>
+                                            <option value="<?= $rowResp['id']?>" <?= ($row['id_responsabile'] == $rowResp['id']) ? 'selected' : ''; ?>>
                                                 <?= htmlspecialchars($rowResp['nome']) . ' ' . htmlspecialchars($rowResp['cognome']) ?>
                                             </option>
                                         <?php endwhile; ?>
@@ -149,8 +172,7 @@ $resResp = $conn->query($queryResp);
                                 </div>
                                 <div class="col-12 col-md-8">
                                     <input type="date" class="form-control mb-2" name="DataInizio" id="DataInizio"
-                                        value="<?= isset($row['data_inizio']) ? htmlspecialchars($row['data_inizio']) : '' ?>"
-                                        required />
+                                        value="<?= isset($row['data_inizio']) ? htmlspecialchars($row['data_inizio']) : '' ?>" />
                                 </div>
                             </div>
 
@@ -160,14 +182,13 @@ $resResp = $conn->query($queryResp);
                                 </div>
                                 <div class="col-12 col-md-8">
                                     <input type="date" class="form-control mb-2" name="DataFine" id="DataFine"
-                                        value="<?= isset($row['data_fine']) ? htmlspecialchars($row['data_fine']) : '' ?>"
-                                        required />
+                                        value="<?= isset($row['data_fine']) ? htmlspecialchars($row['data_fine']) : '' ?>" />
                                 </div>
                             </div>
 
                             <div class="row mb-3">
                                 <div class="col-md-6">
-                                    <button class="btn w-100 mt-2" onclick="location.reload();">Svuota</button>
+                                    <input class="btn w-100 mt-2" type="submit" value="Elimina" name="action" onclick="return confirm('Sei sicuro di voler eliminare questa commessa?')">
                                 </div>
                                 <div class="col-md-6">
                                     <input class="btn w-100 mt-2" type="submit" value="Modifica" name="action">
@@ -177,12 +198,15 @@ $resResp = $conn->query($queryResp);
 
                         <!-- Aggiunta nuovi file -->
                         <h3>Aggiungi nuovi file</h3>
-                        <form action="gestione_file.php" method="post" enctype="multipart/form-data" class="mb-5">
+                        <form action="gestione_file.php" method="post" enctype="multipart/form-data" class="mb-5"
+                            onsubmit="return validateFileSize();">
                             <input type="hidden" name="commessa" value="<?php echo $commessa; ?>">
                             <div class="mb-3">
-                                <label for="new_files" class="form-label">Seleziona i file da caricare</label>
-                                <input type="file" class="form-control" name="new_files[]" id="new_files" multiple
+                                <label for="file" class="form-label">Seleziona i file da caricare</label>
+                                <input type="file" class="form-control" name="file[]" id="file" multiple
                                     accept="image/*,video/*">
+                                <small class="text-muted">La dimensione massima consentita per ogni file è di 10
+                                    MB.</small>
                             </div>
                             <button type="submit" class="btn btn-success">Aggiungi File</button>
                         </form>
@@ -192,84 +216,86 @@ $resResp = $conn->query($queryResp);
 
             </div>
             <div class="col-md-6 d-flex justify-content-between">
-            <?php if (!empty($fileList)): ?>
-    <div class="row w-100">
-        <?php foreach ($fileList as $file): ?>
-            <div class="col-12 col-sm-6 col-md-6 mb-3">
-                <div class="card">
-                    <?php 
-                    $fileExtension = pathinfo($file, PATHINFO_EXTENSION);
-                    if (in_array($fileExtension, ['jpg', 'jpeg', 'png', 'gif'])): ?>
-                        <!-- Visualizza l'immagine con dimensioni fisse -->
-                        <a href="<?= $directory . $file; ?>">
-                            <img src="<?php echo $directory . $file; ?>"
-                                alt="<?php echo htmlspecialchars($file); ?>" class="card-img-top img-fluid"
-                                data-bs-toggle="modal" data-bs-target="#mediaModal-<?php echo $file; ?>"
-                                style="cursor: pointer; width: 100%; height: 300px; object-fit: cover;">
-                        </a>
-                    <?php elseif (in_array($fileExtension, ['mp4', 'webm', 'avi'])): ?>
-                        <!-- Visualizza il video -->
-                        <video class="card-img-top img-fluid" controls
-                            data-bs-toggle="modal" data-bs-target="#mediaModal-<?php echo $file; ?>"
-                            style="cursor: pointer; width: 100%; height: 300px; object-fit: cover;">
-                            <source src="<?php echo $directory . $file; ?>" type="video/<?php echo $fileExtension; ?>">
-                            Il tuo browser non supporta il formato video.
-                        </video>
-                    <?php else: ?>
-                        <!-- Se il file non è né immagine né video, visualizza il nome -->
-                        <div class="card-body">
-                            <p class="card-text text-truncate" title="<?php echo htmlspecialchars($file); ?>">
-                                <?php echo htmlspecialchars($file); ?>
-                            </p>
-                        </div>
-                    <?php endif; ?>
+                <?php if (!empty($fileList)): ?>
+                    <div class="row w-100">
+                        <?php foreach ($fileList as $file): ?>
+                            <div class="col-12 col-sm-6 col-md-6 mb-3">
+                                <div class="card">
+                                    <?php
+                                    $fileExtension = pathinfo($file, PATHINFO_EXTENSION);
+                                    if (in_array($fileExtension, ['jpg', 'jpeg', 'png', 'gif'])): ?>
+                                        <!-- Visualizza l'immagine con dimensioni fisse -->
+                                        <a href="<?= $directory . $file; ?>">
+                                            <img src="<?php echo $directory . $file; ?>"
+                                                alt="<?php echo htmlspecialchars($file); ?>" class="card-img-top img-fluid"
+                                                data-bs-toggle="modal" data-bs-target="#mediaModal-<?php echo $file; ?>"
+                                                style="cursor: pointer; width: 100%; height: 300px; object-fit: cover;">
+                                        </a>
+                                    <?php elseif (in_array($fileExtension, ['mp4', 'webm', 'avi'])): ?>
+                                        <!-- Visualizza il video -->
+                                        <video class="card-img-top img-fluid" controls data-bs-toggle="modal"
+                                            data-bs-target="#mediaModal-<?php echo $file; ?>"
+                                            style="cursor: pointer; width: 100%; height: 300px; object-fit: cover;">
+                                            <source src="<?php echo $directory . $file; ?>"
+                                                type="video/<?php echo $fileExtension; ?>">
+                                            Il tuo browser non supporta il formato video.
+                                        </video>
+                                    <?php else: ?>
+                                        <!-- Se il file non è né immagine né video, visualizza il nome -->
+                                        <div class="card-body">
+                                            <p class="card-text text-truncate" title="<?php echo htmlspecialchars($file); ?>">
+                                                <?php echo htmlspecialchars($file); ?>
+                                            </p>
+                                        </div>
+                                    <?php endif; ?>
 
-                    <!-- Form di eliminazione -->
-                    <div class="card-body text-center">
-                        <form action="gestione_file.php" method="post"
-                            onsubmit="return confirmDelete('<?php echo htmlspecialchars($file); ?>');">
-                            <input type="hidden" name="commessa" value="<?php echo $commessa; ?>">
-                            <input type="hidden" name="elimina_file" value="<?php echo $file; ?>">
-                            <button type="submit" class="btn btn-danger btn-sm w-100"
-                                style="min-width:auto;">Elimina</button>
-                        </form>
+                                    <!-- Form di eliminazione -->
+                                    <div class="card-body text-center">
+                                        <form action="gestione_file.php" method="post"
+                                            onsubmit="return confirmDelete('<?php echo htmlspecialchars($file); ?>');">
+                                            <input type="hidden" name="commessa" value="<?php echo $commessa; ?>">
+                                            <input type="hidden" name="elimina_file" value="<?php echo $file; ?>">
+                                            <button type="submit" class="btn btn-danger btn-sm w-100" style="min-width:auto;"
+                                                <?= str_contains($file, "qr_") ? "disabled" : "" ?>>Elimina</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Modale per l'immagine o il video -->
+                            <div class="modal fade" id="mediaModal-<?php echo $file; ?>" tabindex="-1"
+                                aria-labelledby="mediaModalLabel-<?php echo $file; ?>" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="mediaModalLabel-<?php echo $file; ?>">Media:
+                                                <?php echo htmlspecialchars($file); ?>
+                                            </h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                                aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <?php if (in_array($fileExtension, ['jpg', 'jpeg', 'png', 'gif'])): ?>
+                                                <img src="<?php echo $directory . $file; ?>"
+                                                    alt="<?php echo htmlspecialchars($file); ?>" class="img-fluid w-100">
+                                            <?php elseif (in_array($fileExtension, ['mp4', 'webm', 'avi'])): ?>
+                                                <video class="img-fluid w-100" controls>
+                                                    <source src="<?php echo $directory . $file; ?>"
+                                                        type="video/<?php echo $fileExtension; ?>">
+                                                    Il tuo browser non supporta il formato video.
+                                                </video>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        <?php endforeach; ?>
+
                     </div>
-                </div>
-            </div>
-
-            <!-- Modale per l'immagine o il video -->
-            <div class="modal fade" id="mediaModal-<?php echo $file; ?>" tabindex="-1"
-                aria-labelledby="mediaModalLabel-<?php echo $file; ?>" aria-hidden="true">
-                <div class="modal-dialog modal-dialog-centered">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title" id="mediaModalLabel-<?php echo $file; ?>">Media:
-                                <?php echo htmlspecialchars($file); ?>
-                            </h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body">
-                            <?php if (in_array($fileExtension, ['jpg', 'jpeg', 'png', 'gif'])): ?>
-                                <img src="<?php echo $directory . $file; ?>"
-                                    alt="<?php echo htmlspecialchars($file); ?>" class="img-fluid w-100">
-                            <?php elseif (in_array($fileExtension, ['mp4', 'webm', 'avi'])): ?>
-                                <video class="img-fluid w-100" controls>
-                                    <source src="<?php echo $directory . $file; ?>" type="video/<?php echo $fileExtension; ?>">
-                                    Il tuo browser non supporta il formato video.
-                                </video>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-        <?php endforeach; ?>
-
-    </div>
-<?php else: ?>
-    <p>Nessun file presente per questa commessa.</p>
-<?php endif; ?>
+                <?php else: ?>
+                    <p>Nessun file presente per questa commessa.</p>
+                <?php endif; ?>
 
             </div>
 
@@ -288,6 +314,7 @@ $resResp = $conn->query($queryResp);
         integrity="sha384-BBtl+eGJRgqQAUMxJ7pMwbEyER4l1g+O15P+16Ep7Q9Q+zqX6gSbd85u4mG4QzX+"
         crossorigin="anonymous"></script>
 
+    <script src="js/script.js"></script>
     <script>
         // Funzione per confermare l'eliminazione
         function confirmDelete(fileName) {

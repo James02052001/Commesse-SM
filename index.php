@@ -40,7 +40,9 @@ $resResp = $conn->query($queryResp);
             </div>
             <div class="card-body d-flex justify-content flex-column justify-content-center">
                 <form class="mb-3 d-flex justify-content flex-column justify-content-center"
-                    enctype="multipart/form-data" action="registra.php" method="post">
+                    enctype="multipart/form-data" action="registra.php" method="post"
+                    onsubmit="return validateFileSize();">
+
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <label for="Cliente" class="form-label mt-2">Nome Cliente</label>
@@ -63,33 +65,33 @@ $resResp = $conn->query($queryResp);
 
                         <div class="col-md-6">
                             <label for="Responsabile" class="form-label mt-2">Responsabile</label>
-                            <select class="form-control mb-2" name="Responsabile" id="Responsabile" required>
+                            <select class="form-control mb-2" name="Responsabile" id="Responsabile">
                                 <option selected> Nessuno </option>
-                                <!-- Ciclo i responsabili per scriverli nella selezione -->
                                 <?php while ($rowResp = $resResp->fetch_assoc()): ?>
                                     <option value="<?= $rowResp['id'] ?>">
                                         <?= $rowResp['nome'] . ' ' . $rowResp['cognome'] ?>
                                     </option>
                                 <?php endwhile; ?>
-                                <select>
+                            </select>
                         </div>
                     </div>
 
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <label for="DataInizio" class="form-label mt-2">Data Inizio</label>
-                            <input type="date" class="form-control mb-2" name="DataInizio" id="DataInizio" required />
+                            <input type="date" class="form-control mb-2" name="DataInizio" id="DataInizio" />
                         </div>
 
                         <div class="col-md-6">
                             <label for="DataFine" class="form-label mt-2">Data Fine</label>
-                            <input type="date" class="form-control mb-2" name="DataFine" id="DataFine" required />
+                            <input type="date" class="form-control mb-2" name="DataFine" id="DataFine" />
                         </div>
                     </div>
 
                     <div class="row mb-3 ps-2 pe-2">
                         <label for="file" class="form-label mt-2">Allega i file</label>
                         <input type="file" class="form-control mb-2" name="files[]" id="file" multiple />
+                        <small class="text-muted">La dimensione massima consentita per ogni file è di 10 MB.</small>
                     </div>
 
                     <div class="row mb-3">
@@ -100,7 +102,6 @@ $resResp = $conn->query($queryResp);
                             <input class="btn w-100 mt-2" type="submit" value="Salva" name="action">
                         </div>
                     </div>
-
                 </form>
             </div>
         </div>
@@ -116,6 +117,8 @@ $resResp = $conn->query($queryResp);
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js"
         integrity="sha384-BBtl+eGJRgqQAUMxJ7pMwbEyER4l1g+O15P+16Ep7Q9Q+zqX6gSbd85u4mG4QzX+"
         crossorigin="anonymous"></script>
+
+    <script src="js/script.js"></script>
 </body>
 
 </html>

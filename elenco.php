@@ -151,7 +151,7 @@ $resResp = $conn->query($queryResp);
                         <label for="responsabile" class="form-label">Responsabile</label>
                     </div>
                     <div class="col-8">
-                        <select id="responsabile" name="responsabile" class="form-select">
+                        <select id="responsabile" name="responsabile" class="form-control">
                             <option value="Nessuno" <?php echo (isset($_GET['responsabile']) && $_GET['responsabile'] == 'Nessuno') ? 'selected' : ''; ?>>Nessuno</option>
                             <!-- Ciclo i responsabili per scriverli nella selezione -->
                             <?php while ($rowResp = $resResp->fetch_assoc()): ?>

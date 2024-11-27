@@ -90,6 +90,7 @@ footer{
 
 /** General **/
 .btn{
+    border-color: var(--text-primary-rgb);
     background: var(--text-primary-rgb);
     color: var(--text-secondary-rgb);
 
@@ -98,8 +99,13 @@ footer{
 
     font-weight: bold;
 }
+.btn:disabled{
+    border-color: lightgray;
+    background-color: lightgray;
+}
 
 .btn:hover{
+    border-color: var(--text-secondary-rgb);
     background: var(--text-secondary-rgb);
     color: var(--text-primary-rgb);
     font-weight: bold;

@@ -29,8 +29,8 @@ if (isset($_POST['commessa'])) {
     }
 
     // Gestione aggiunta file
-    if (isset($_FILES['new_files'])) {
-        $newFiles = $_FILES['new_files'];
+    if (isset($_FILES['files'])) {
+        $newFiles = $_FILES['files'];
         $fileCount = count($newFiles['name']);
 
         // Trova il numero più alto già presente nei file della directory
