@@ -1,0 +1,18 @@
+
+.form-label{
+    text-align: right;    
+}
+
+.card-body main{
+    min-width: 610px;
+}
+
+@media (max-width: 576px) {
+    .form-label{
+        text-align: center;    
+    }
+
+    .card-body main{
+        min-width: auto;    
+    }
+}

@@ -7,14 +7,12 @@ global $conn;
 $queryResp = "SELECT * FROM `responsabile`";
 $resResp = $conn->query($queryResp);
 
-if (isset($_GET['msg']) && trim($_GET['msg']) != '')
-    mostraPopup($_GET['msg'], "Esito");
 ?>
 <!doctype html>
 <html lang="en">
 
 <head>
-    <title>Sud Motori - Gestione Commesse</title>
+    <title>Sud Motori - Inserimento Commesse</title>
     <link rel="icon" href="img/LogoSm.png" type="image/png">
     <!-- Required meta tags -->
     <meta charset="utf-8" />
@@ -29,10 +27,13 @@ if (isset($_GET['msg']) && trim($_GET['msg']) != '')
 </head>
 
 <body>
-
     <?php include("common/header.php") ?>
 
     <main class="p-2 d-flex text-center justify-content-center">
+        <?php
+        if (isset($_GET['msg']) && trim($_GET['msg']) != '')
+            mostraPopup($_GET['msg'], "Esito");
+        ?>
         <div class="card">
             <div class="card-header">
                 <h4 class="p-2 m-0">Registrazione Commessa</h4>
