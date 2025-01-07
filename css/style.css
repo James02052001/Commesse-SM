@@ -95,10 +95,16 @@ footer{
     color: var(--text-secondary-rgb);
 
     min-width: 150px;
-    padding: 10px 30px !important;
+    padding: 10px 30px;
 
     font-weight: bold;
 }
+
+.btn i, .btn strong{
+    border-color: var(--text-primary-rgb);
+    color: var(--text-secondary-rgb);
+}
+
 .btn:disabled{
     border-color: lightgray;
     background-color: lightgray;
@@ -110,6 +116,12 @@ footer{
     color: var(--text-primary-rgb);
     font-weight: bold;
 }
+
+.btn:hover i, .btn:hover strong{
+    color: var(--text-primary-rgb);
+    font-weight: bold;
+}
+
 
 @media (max-width: 576px) {
     .btn{ 

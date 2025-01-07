@@ -6,4 +6,10 @@
     .form-control{
         min-width: auto;    
     }
+
+
+    .welcome{
+        width: 100%;
+        text-align: center  ;
+    }
 }

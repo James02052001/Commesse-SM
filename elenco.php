@@ -1,4 +1,5 @@
 <?php
+include("common/check_session.php");
 include("common/connection.php");
 include("common/popup.php");
 
@@ -14,17 +15,22 @@ $paginaCorrente = max($paginaCorrente, 1); // Assicurati che la pagina non sia i
 $offset = ($paginaCorrente - 1) * $commessePerPagina;
 
 // Base della query
-$query = "SELECT commessa.*, responsabile.nome, responsabile.cognome FROM commessa "
-    . "LEFT OUTER JOIN responsabile ON commessa.id_responsabile = responsabile.id WHERE 1=1";
+$query = "SELECT commessa.* "
+    .", respMont.nome nomeRespMont, respMont.cognome cognomeRespMont "
+    .", respSmont.nome nomeRespSmont, respSmont.cognome cognomeRespSmont "
+    ." FROM commessa "
+    ." LEFT OUTER JOIN responsabile respMont ON commessa.id_responsabile_mont = respMont.id "
+    ." LEFT OUTER JOIN responsabile respSmont ON commessa.id_responsabile_smont = respSmont.id "
+    ." WHERE 1=1";
 // Array per bind dei parametri
 $where = "";
 $params = [];
 $types = "";
 
-if (!empty($_GET['cliente'])) {
-    $where .= " AND LOWER(REPLACE(REPLACE(commessa.cliente, ' ', ''), '.', '')) LIKE ?";
-    $params[] = "%" . strtolower(str_replace([' ', '.'], '', $_GET['cliente'])) . "%";
-    $types .= "s"; // Stringa
+if (!empty($_GET['anno'])) {
+    $where .= " AND anno = ?";
+    $params[] = $_GET['anno'];
+    $types .= "i"; // Stringa
 }
 
 // Filtra per Numero Commessa
@@ -34,6 +40,12 @@ if (!empty($_GET['commessa'])) {
     $types .= "s"; // Intero
 }
 
+if (!empty($_GET['cliente'])) {
+    $where .= " AND LOWER(REPLACE(REPLACE(commessa.cliente, ' ', ''), '.', '')) LIKE ?";
+    $params[] = "%" . strtolower(str_replace([' ', '.'], '', $_GET['cliente'])) . "%";
+    $types .= "s"; // Stringa
+}
+
 // Filtra per Motore
 if (!empty($_GET['motore'])) {
     $where .= " AND commessa.motore LIKE ?";
@@ -41,27 +53,62 @@ if (!empty($_GET['motore'])) {
     $types .= "s"; // Stringa
 }
 
-// Filtra per Responsabile
-if (!empty($_GET['responsabile']) && $_GET['responsabile'] !== 'Nessuno') {
-    $where .= " AND commessa.id_responsabile = ?";
-    $params[] = $_GET['responsabile'];
+// Filtra per Responsabile Montaggio
+if (!empty($_GET['respMont']) && $_GET['respMont'] !== 'Nessuno') {
+    $where .= " AND commessa.id_responsabile_mont = ?";
+    $params[] = $_GET['respMont'];
     $types .= "i"; // Intero
 }
 
+// Filtra per Responsabile Smontaggio
+if (!empty($_GET['respSmont']) && $_GET['respSmont'] !== 'Nessuno') {
+    $where .= " AND commessa.id_responsabile_smont = ?";
+    $params[] = $_GET['respSmont'];
+    $types .= "i"; // Intero
+}
+
+
 // Filtra per Data Inizio
 if (!empty($_GET['data_inizio'])) {
-    $where .= " AND commessa.data >= ?";
+    $where .= " AND commessa.data_inizio >= ?";
     $params[] = $_GET['data_inizio'];
     $types .= "s"; // Data come stringa
 }
 
 // Filtra per Data Fine
 if (!empty($_GET['data_fine'])) {
-    $where .= " AND commessa.data <= ?";
+    $where .= " AND commessa.data_fine <= ?";
     $params[] = $_GET['data_fine'];
     $types .= "s"; // Data come stringa
 }
 
+// Filtra per Data Inizio Montaggio
+if (!empty($_GET['data_inizio_mont'])) {
+    $where .= " AND commessa.data_inizio_mont >= ?";
+    $params[] = $_GET['data_inizio_mont'];
+    $types .= "s"; // Data come stringa
+}
+
+// Filtra per Data Fine Montaggio
+if (!empty($_GET['data_fine_mont'])) {
+    $where .= " AND commessa.data_fine_mont <= ?";
+    $params[] = $_GET['data_fine_mont'];
+    $types .= "s"; // Data come stringa
+}
+
+// Filtra per Data Inizio Montaggio
+if (!empty($_GET['data_inizio_smont'])) {
+    $where .= " AND commessa.data_inizio_smont >= ?";
+    $params[] = $_GET['data_inizio_smont'];
+    $types .= "s"; // Data come stringa
+}
+
+// Filtra per Data Fine Montaggio
+if (!empty($_GET['data_fine_smont'])) {
+    $where .= " AND commessa.data_fine_smont <= ?";
+    $params[] = $_GET['data_fine_smont'];
+    $types .= "s"; // Data come stringa
+}
 // Aggiungi limite e offset
 $query .= $where . " LIMIT ? OFFSET ?";
 $params[] = $commessePerPagina;
@@ -76,7 +123,6 @@ $resComm = $stmt->get_result();
 
 //Leggo l'elenco dei responsabili
 $queryResp = "SELECT * FROM `responsabile`";
-$resResp = $conn->query($queryResp);
 ?>
 
 <!doctype html>
@@ -115,14 +161,14 @@ $resResp = $conn->query($queryResp);
                 style="font-size: 1.5rem; position: absolute; top: 10px; right: 15px;">&times;</button>
             <h5 class="mb-4">Filtri</h5>
             <form action="elenco.php" method="get">
-                <!-- Nome Cliente -->
+                <!-- Anno -->
                 <div class="row mb-3">
                     <div class="col-4">
-                        <label for="cliente" class="form-label">Nome Cliente</label>
+                        <label for="anno" class="form-label">Anno</label>
                     </div>
                     <div class="col-8">
-                        <input type="text" id="cliente" name="cliente" class="form-control" max="255"
-                            value="<?= isset($_GET['cliente']) ? htmlspecialchars($_GET['cliente']) : '' ?>" />
+                        <input type="number" id="anno" name="anno" class="form-control" min="1"
+                            value="<?= isset($_GET['anno']) ? htmlspecialchars($_GET['anno']) : '' ?>" />
                     </div>
                 </div>
                 <!-- Num. Commessa -->
@@ -135,6 +181,16 @@ $resResp = $conn->query($queryResp);
                             value="<?= isset($_GET['commessa']) ? htmlspecialchars($_GET['commessa']) : '' ?>" />
                     </div>
                 </div>
+                <!-- Nome Cliente -->
+                <div class="row mb-3">
+                    <div class="col-4">
+                        <label for="cliente" class="form-label">Nome Cliente</label>
+                    </div>
+                    <div class="col-8">
+                        <input type="text" id="cliente" name="cliente" class="form-control" max="255"
+                            value="<?= isset($_GET['cliente']) ? htmlspecialchars($_GET['cliente']) : '' ?>" />
+                    </div>
+                </div>
                 <!-- Motore -->
                 <div class="row mb-3">
                     <div class="col-4">
@@ -145,19 +201,42 @@ $resResp = $conn->query($queryResp);
                             value="<?= isset($_GET['motore']) ? htmlspecialchars($_GET['motore']) : '' ?>" />
                     </div>
                 </div>
-                <!-- Responsabile -->
+                <!-- Responsabile Montaggio -->
                 <div class="row mb-3">
                     <div class="col-4">
-                        <label for="responsabile" class="form-label">Responsabile</label>
+                        <label for="responsabile" class="form-label">Resp. Mont</label>
                     </div>
                     <div class="col-8">
-                        <select id="responsabile" name="responsabile" class="form-control">
-                            <option value="Nessuno" <?php echo (isset($_GET['responsabile']) && $_GET['responsabile'] == 'Nessuno') ? 'selected' : ''; ?>>Nessuno</option>
+                        <select id="respMont" name="respMont" class="form-control">
+                            <option value="Nessuno" <?php echo (isset($_GET['respMont']) && $_GET['respMont'] == 'Nessuno') ? 'selected' : ''; ?>>Nessuno</option>
                             <!-- Ciclo i responsabili per scriverli nella selezione -->
+                            <?php $resResp = $conn->query($queryResp); ?>
                             <?php while ($rowResp = $resResp->fetch_assoc()): ?>
                                 <option value="<?= $rowResp['id'] ?>" <?php
                                   // Verifica se l'ID del responsabile è uguale al valore passato tramite GET
-                                  echo (isset($_GET['responsabile']) && $_GET['responsabile'] == $rowResp['id']) ? 'selected' : '';
+                                  echo (isset($_GET['respMont']) && $_GET['respMont'] == $rowResp['id']) ? 'selected' : '';
+                                  ?>>
+                                    <?= htmlspecialchars($rowResp['nome']) . ' ' . htmlspecialchars($rowResp['cognome']) ?>
+                                </option>
+                            <?php endwhile; ?>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Responsabile Smontaggio -->
+                <div class="row mb-3">
+                    <div class="col-4">
+                        <label for="responsabile" class="form-label">Resp. Smont</label>
+                    </div>
+                    <div class="col-8">
+                        <select id="respSmont" name="respSmont" class="form-control">
+                            <option value="Nessuno" <?php echo (isset($_GET['respSmont']) && $_GET['respSmont'] == 'Nessuno') ? 'selected' : ''; ?>>Nessuno</option>
+                            <!-- Ciclo i responsabili per scriverli nella selezione -->
+                            <?php $resResp = $conn->query($queryResp); ?>
+                            <?php while ($rowResp = $resResp->fetch_assoc()): ?>
+                                <option value="<?= $rowResp['id'] ?>" <?php
+                                  // Verifica se l'ID del responsabile è uguale al valore passato tramite GET
+                                  echo (isset($_GET['respSmont']) && $_GET['respSmont'] == $rowResp['id']) ? 'selected' : '';
                                   ?>>
                                     <?= htmlspecialchars($rowResp['nome']) . ' ' . htmlspecialchars($rowResp['cognome']) ?>
                                 </option>
@@ -185,6 +264,49 @@ $resResp = $conn->query($queryResp);
                             value="<?= isset($_GET['data_fine']) ? htmlspecialchars($_GET['data_fine']) : '' ?>" />
                     </div>
                 </div>
+
+                <!-- Data Inizio Montaggio -->
+                <div class="row mb-3">
+                    <div class="col-4">
+                        <label for="data-inizio_mont" class="form-label">Data Inizio Mont.</label>
+                    </div>
+                    <div class="col-8">
+                        <input type="date" id="data-inizio_mont" name="data_inizio_mont" class="form-control"
+                            value="<?= isset($_GET['data_inizio_mont']) ? htmlspecialchars($_GET['data_inizio_mont']) : '' ?>" />
+                    </div>
+                </div>
+                <!-- Data Fine Montaggio -->
+                <div class="row mb-3">
+                    <div class="col-4">
+                        <label for="data-fine_mont" class="form-label">Data Fine Mont.</label>
+                    </div>
+                    <div class="col-8">
+                        <input type="date" id="data-fine_mont" name="data_fine_mont" class="form-control"
+                            value="<?= isset($_GET['data_fine']) ? htmlspecialchars($_GET['data_fine_mont']) : '' ?>" />
+                    </div>
+                </div>      
+                
+                
+                <!-- Data Inizio Smontaggio -->
+                <div class="row mb-3">
+                    <div class="col-4">
+                        <label for="data-inizio_smont" class="form-label">Data Inizio Smont.</label>
+                    </div>
+                    <div class="col-8">
+                        <input type="date" id="data-inizio_smont" name="data_inizio_smont" class="form-control"
+                            value="<?= isset($_GET['data_inizio_smont']) ? htmlspecialchars($_GET['data_inizio_smont']) : '' ?>" />
+                    </div>
+                </div>
+                <!-- Data Fine Smontaggio -->
+                <div class="row mb-3">
+                    <div class="col-4">
+                        <label for="data-fine_smont" class="form-label">Data Fine Smont.</label>
+                    </div>
+                    <div class="col-8">
+                        <input type="date" id="data-fine_smont" name="data_fine_smont" class="form-control"
+                            value="<?= isset($_GET['data_fine']) ? htmlspecialchars($_GET['data_fine_smont']) : '' ?>" />
+                    </div>
+                </div>  
                 <!-- Pulsante -->
                 <button type="submit" class="btn btn-primary w-100">Ricerca</button>
             </form>
@@ -200,13 +322,13 @@ $resResp = $conn->query($queryResp);
         <div class="row">
             <?php while ($rowComm = $resComm->fetch_assoc()): ?>
                 <div class="col-md-3 mb-4"> <!-- Modifica da col-md-2 a col-md-3 -->
-                    <a href="dettaglio.php?Commessa=<?= $rowComm['commessa'] ?>"
+                    <a href="dettaglio.php?Anno=<?=$rowComm['anno']?>&Commessa=<?= $rowComm['commessa']?>"
                         class="card custom-card text-decoration-none">
                         <div id="carousel-<?= $rowComm['commessa'] ?>" class="carousel slide" data-bs-ride="carousel">
                             <div class="carousel-inner">
                                 <?php
                                 // Recupera i file dalla cartella della commessa
-                                $cartellaMedia = 'data/' . $rowComm['commessa'];
+                                $cartellaMedia = 'data/' . $rowComm['anno'].'/'. $rowComm['commessa'];
 
                                 // Verifica se la cartella esiste e contiene immagini o video
                                 if (is_dir($cartellaMedia)) {
@@ -264,8 +386,12 @@ $resResp = $conn->query($queryResp);
                                         <td><?= $rowComm['motore'] ?></td>
                                     </tr>
                                     <tr>
-                                        <th scope="row">Responsabile</th>
-                                        <td><?= $rowComm['nome'] . ' ' . $rowComm['cognome'] ?></td>
+                                        <th scope="row">Resp. Mont.</th>
+                                        <td><?= $rowComm['nomeRespMont'] . ' ' . $rowComm['cognomeRespMont'] ?></td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">Resp. Smont.</th>
+                                        <td><?= $rowComm['nomeRespSmont'] . ' ' . $rowComm['cognomeRespSmont'] ?></td>
                                     </tr>
                                     <tr>
                                         <th scope="row">Data Inizio</th>

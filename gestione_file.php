@@ -1,10 +1,12 @@
 <?php
+include("common/check_session.php");
 include "common/connection.php";
 
 // Verifica che la commessa sia presente nella richiesta
-if (isset($_POST['commessa'])) {
-    $commessa = $_POST['commessa'];
-    $directory = "data/$commessa/";
+if (isset($_POST['Commessa']) && isset($_POST['Anno'])) {
+    $commessa = $_POST['Commessa'];
+    $anno = $_POST['Anno'];
+    $directory = "data/$anno/$commessa/";
 
     // Se la directory non esiste, la crea
     if (!is_dir($directory)) {
@@ -24,7 +26,7 @@ if (isset($_POST['commessa'])) {
             $message = "Errore: il file $file non esiste.";
         }
         // Reindirizza alla pagina di dettaglio
-        header("Location: dettaglio.php?Commessa=$commessa&msg=" . urlencode($message));
+        header("Location: dettaglio.php?Anno=$anno&Commessa=$commessa&msg=" . urlencode($message));
         exit; // Assicurati di interrompere l'esecuzione
     }
 
@@ -33,6 +35,12 @@ if (isset($_POST['commessa'])) {
         $newFiles = $_FILES['files'];
         $fileCount = count($newFiles['name']);
 
+        if ($fileCount <= 0 || $newFiles['tmp_name'][0] == ''){
+            $message = "Nessun file caricato!";
+            header("Location: dettaglio.php?Anno=$anno&Commessa=$commessa&msg=" . urlencode($message));
+            exit();
+        }
+
         // Trova il numero più alto già presente nei file della directory
         $existingFiles = scandir($directory);
         $existingFiles = array_diff($existingFiles, array('.', '..')); // Rimuove le directory speciali
@@ -40,8 +48,8 @@ if (isset($_POST['commessa'])) {
         $maxIndex = 0;
         foreach ($existingFiles as $existingFile) {
             $filenameWithoutExt = pathinfo($existingFile, PATHINFO_FILENAME);
-            if (is_numeric($filenameWithoutExt) && (int)$filenameWithoutExt > $maxIndex) {
-                $maxIndex = (int)$filenameWithoutExt;
+            if (is_numeric($filenameWithoutExt) && (int) $filenameWithoutExt > $maxIndex) {
+                $maxIndex = (int) $filenameWithoutExt;
             }
         }
 
@@ -61,11 +69,11 @@ if (isset($_POST['commessa'])) {
 
         $message = "Nuovi file caricati con successo.";
         // Reindirizza alla pagina di dettaglio
-        header("Location: dettaglio.php?Commessa=$commessa&msg=" . urlencode($message));
+        header("Location: dettaglio.php?Anno=$anno&Commessa=$commessa&msg=" . urlencode($message));
         exit; // Assicurati di interrompere l'esecuzione
     }
 } else {
-    echo "Errore: ID Commessa mancante.";
+    echo "Errore: ID Commessa o Anno mancante.";
     exit;
 }
 ?>

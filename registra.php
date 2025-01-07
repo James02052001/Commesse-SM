@@ -1,13 +1,15 @@
 <?php
+include("common/check_session.php");
 include "common/connection.php";
 
 $action = $_POST['action'];
-$cliente = "";
-$commessa = "";
-$motore = "";
-$responsabile = "";
-$dataInizio = "";
-$dataFine = "";
+
+$anno = ""; $commessa = "";
+$cliente = ""; $motore = "";
+$respMont = ""; $respSmont = "";
+$dataInizio = ""; $dataFine = "";
+$dataInizioMont = ""; $dataFineMont = "";
+$dataInizioSmont = ""; $dataFineSmont = "";
 $files = "";
 
 $pagina = "";
@@ -23,24 +25,24 @@ switch ($action) {
     case "Elimina":
         Elimina($pagina, $msg);
         break;
-    case "Ricerca":
-        Ricerca($pagina, $msg);
-        break;
-
     default:
         unset($_POST);
-        header("Location:index.php?msg=valori mancanti");
+        header("Location:inserimento.php?msg=valori mancanti");
         break;
 }
 
-if ($pagina != "")
-    header("Location:$pagina?msg=$msg");
+if ($pagina != "") {
+    // Aggiungi 'msg' alla URL esistente
+    $redirectUrl = strpos($pagina, '?') === false ? "$pagina?msg=$msg" : "$pagina&msg=$msg";
+    header("Location: $redirectUrl");
+    exit; // Termina lo script per assicurarti che il redirect avvenga immediatamente
+}
 
 
 function Salva(&$pagina, &$msg)
 {
     global $conn;
-    global $cliente, $commessa, $motore, $responsabile, $dataInizio, $dataFine, $files;
+    global $anno, $commessa, $motore, $cliente, $respMont, $respSmont, $dataInizio, $dataFine, $dataInizioMont, $dataFineMont, $dataInizioSmont, $dataFineSmont, $files;
 
     Getdata();
 
@@ -50,7 +52,7 @@ function Salva(&$pagina, &$msg)
 
     if (!$stmt) {
         $msg = 'Errore nella preparazione della query di selezione: ' . $conn->error;
-        $pagina = "index.php";
+        $pagina = "inserimento.php";
         return;
     }
 
@@ -65,31 +67,31 @@ function Salva(&$pagina, &$msg)
     // Controlla se la commessa esiste già
     if ($nResult > 0) {
         $msg = 'Commessa già esistente';
-        $pagina = "index.php";
+        $pagina = "inserimento.php";
         $stmt->close();
         return;
     }
 
     // Prepariamo la query per l'inserimento
-    $query = "INSERT INTO `commessa` (`Commessa`, `cliente`, `motore`, `id_responsabile`, `data_inizio`, `data_fine`) 
-                  VALUES (?, ?, ?, ?, ?, ?)";
+    $query = "INSERT INTO `commessa` (`Anno`, `Commessa`, `cliente`, `motore`, `id_responsabile_mont`, `id_responsabile_smont`, `data_inizio`, `data_fine`, `data_inizio_mont`, `data_fine_mont`, `data_inizio_smont`, `data_fine_smont`) 
+                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     $stmt = $conn->prepare($query);
 
     // Controllo se la query di inserimento è stata preparata correttamente
     if (!$stmt) {
         $msg = 'Errore nella preparazione della query di inserimento: ' . $conn->error;
-        $pagina = "index.php";
+        $pagina = "inserimento.php";
         return;
     }
 
     // Lega i parametri alla query
-    $stmt->bind_param("sssiss", $commessa, $cliente, $motore, $responsabile, $dataInizio, $dataFine);
+    $stmt->bind_param("isssiissssss",$anno, $commessa, $cliente, $motore, $respMont, $respSmont, $dataInizio, $dataFine, $dataInizioMont, $dataFineMont, $dataInizioSmont, $dataFineSmont);
 
     // Esegui l'inserimento
     $result = $stmt->execute();
 
     if ($result) {
-        $directory = "data/$commessa/";
+        $directory = "data/$anno/$commessa/";
 
         // Se la directory esiste, cancellala prima di crearne una nuova
         if (is_dir($directory)) {
@@ -111,10 +113,10 @@ function Salva(&$pagina, &$msg)
             $msg = 'Salvataggio effettuato! Ma non è stato caricato nessun file!';
         }
 
-        $pagina = "index.php";
+        $pagina = "inserimento.php";
     } else {
         $msg = 'Errore nel salvataggio: ' . $stmt->error;
-        $pagina = "index.php";
+        $pagina = "inserimento.php";
     }
 
     // Chiudi il prepared statement
@@ -122,7 +124,6 @@ function Salva(&$pagina, &$msg)
 
     return;
 }
-
 
 // Funzione per cancellare una directory e tutti i file al suo interno
 function deleteDirectory($dir)
@@ -148,14 +149,21 @@ function deleteDirectory($dir)
 
 function Getdata()
 {
-    global $cliente, $commessa, $motore, $responsabile, $dataInizio, $dataFine, $files;
-    $cliente = isset($_POST['Cliente']) ? $_POST['Cliente'] : "";
+    global $anno, $commessa, $motore, $cliente, $respMont, $respSmont, $dataInizio, $dataFine, $dataInizioMont, $dataFineMont, $dataInizioSmont, $dataFineSmont, $files;
+    $anno = isset($_POST['Anno']) ? $_POST['Anno'] : "";
     $commessa = isset($_POST['Commessa']) ? $_POST['Commessa'] : "";
+    $cliente = isset($_POST['Cliente']) ? $_POST['Cliente'] : "";    
     $motore = isset($_POST['Motore']) ? $_POST['Motore'] : "";
-    $responsabile = isset($_POST['Responsabile']) ? $_POST['Responsabile'] : "";
+
+    $respMont = isset($_POST['RespMont']) ? $_POST['RespMont'] : "";
+    $respSmont = isset($_POST['RespSmont']) ? $_POST['RespSmont'] : "";
 
     $dataInizio = isset($_POST['DataInizio']) ? $_POST['DataInizio'] : "";
     $dataFine = isset($_POST['DataFine']) ? $_POST['DataFine'] : "";
+    $dataInizioMont = isset($_POST['DataInizioMont']) ? $_POST['DataInizioMont'] : "";
+    $dataFineMont = isset($_POST['DataFineMont']) ? $_POST['DataFineMont'] : "";
+    $dataInizioSmont = isset($_POST['DataInizioSmont']) ? $_POST['DataInizioSmont'] : "";
+    $dataFineSmont = isset($_POST['DataFineSmont']) ? $_POST['DataFineSmont'] : "";
 
     $files = isset($_FILES["files"]) ? $_FILES["files"] : "NULL";
 }
@@ -163,23 +171,34 @@ function Getdata()
 function Modifica(&$pagina, &$msg)
 {
     global $conn;
-    global $cliente, $commessa, $motore, $responsabile, $dataInizio, $dataFine, $files;
+    global $anno, $commessa, $cliente, $motore, $respMont, $respSmont, $dataInizio, $dataFine, $dataInizioMont, $dataFineMont, $dataInizioSmont, $dataFineSmont, $files;
 
     Getdata();
 
-    // Preparare la query di UPDATE
-    $query = "UPDATE `commessa` SET `cliente` = ?, `motore` = ?, `id_responsabile` = ?, `data_inizio` = ?, `data_fine` = ? WHERE `Commessa` = ?";
+    // Preparare la query di UPDATE con tutte le colonne aggiornabili
+    $query = "UPDATE `commessa` 
+              SET `cliente` = ?
+              , `motore` = ?
+              , `id_responsabile_mont` = ?
+              , `id_responsabile_smont` = ?
+              , `data_inizio` = ?
+              , `data_fine` = ?
+              , `data_inizio_mont` = ?
+              , `data_fine_mont` = ?
+              , `data_inizio_smont` = ?
+              , `data_fine_smont` = ?
+              WHERE `anno` = ? AND `commessa` = ?";
     $stmt = $conn->prepare($query);
 
     // Controllo se la query è stata preparata correttamente
     if (!$stmt) {
         $msg = 'Errore nella composizione della query: ' . $conn->error;
-        $pagina = "index.php";
+        $pagina = "dettaglio.php?Anno=".$anno."&Commessa=".$commessa;
         return;
     }
 
     // Lega i parametri alla query
-    $stmt->bind_param("ssisss", $cliente, $motore, $responsabile, $dataInizio, $dataFine, $commessa);
+    $stmt->bind_param("ssiissssssis", $cliente, $motore, $respMont, $respSmont, $dataInizio, $dataFine, $dataInizioMont, $dataFineMont, $dataInizioSmont, $dataFineSmont, $anno, $commessa);
 
     // Esegui l'UPDATE
     $result = $stmt->execute();
@@ -188,10 +207,10 @@ function Modifica(&$pagina, &$msg)
     if ($result) {
         // Gestione dei file, se necessario come nel caso della funzione Salva
         $msg = 'Modifica effettuata';
-        $pagina = "index.php";
+        $pagina = "dettaglio.php?Anno=".$anno."&Commessa=".$commessa;
     } else {
         $msg = 'Errore nella modifica: ' . $stmt->error;
-        $pagina = "index.php";
+        $pagina = "dettaglio.php?Anno=".$anno."&Commessa=".$commessa;
     }
 
     // Chiudi il prepared statement
@@ -217,7 +236,7 @@ function Elimina(&$pagina, &$msg)
     // Verifica se la query è stata preparata correttamente
     if (!$stmt) {
         $msg = 'Errore nella preparazione della query: ' . $conn->error;
-        $pagina = "index.php";
+        $pagina = "inserimento.php";
         return;
     }
 
@@ -231,11 +250,11 @@ function Elimina(&$pagina, &$msg)
     if ($result) {
         // Se la query è andata a buon fine
         $msg = 'Eliminazione effettuata';
-        $pagina = "index.php";
+        $pagina = "inserimento.php";
     } else {
         // Se c'è stato un errore
         $msg = 'Errore nell\'eliminazione: ' . $stmt->error;
-        $pagina = "index.php";
+        $pagina = "inserimento.php";
     }
 
     // Chiudiamo il prepared statement
@@ -244,60 +263,15 @@ function Elimina(&$pagina, &$msg)
     return;
 }
 
-function Ricerca(&$pagina, &$msg)
-{
-    global $conn;
-    global $cliente, $commessa, $motore, $responsabile, $dataInizio, $dataFine, $files;
-
-    // Recuperiamo i dati dal form
-    Getdata();
-
-    // Creiamo una query dinamica per gestire più criteri di ricerca
-    $query = "SELECT * FROM `commessa` WHERE 1=1";
-
-    // Aggiungiamo i criteri di ricerca solo se vengono forniti
-    if (!empty($commessa)) {
-        $query .= " AND `Commessa` LIKE '%$commessa%'";
-    }
-    if (!empty($cliente)) {
-        $query .= " AND `cliente` LIKE '%$cliente%'";
-    }
-    if (!empty($motore)) {
-        $query .= " AND `motore` LIKE '%$motore%'";
-    }
-
-    // Eseguiamo la query
-    $result = $conn->query($query);
-
-    // Se troviamo risultati, li formattiamo in una tabella HTML
-    if ($result->num_rows > 0) {
-        $msg = 'Risultati trovati:';
-        echo "<table border='1'>
-                <tr>
-                    <th>Commessa</th>
-                    <th>Cliente</th>
-                    <th>Motore</th>
-                </tr>";
-        while ($row = $result->fetch_assoc()) {
-            echo "<tr>
-                    <td>{$row['Commessa']}</td>
-                    <td>{$row['cliente']}</td>
-                    <td>{$row['motore']}</td>
-                  </tr>";
+function debugQuery($query, $params) {
+    foreach ($params as &$param) {
+        if (is_string($param)) {
+            $param = "'" . $param . "'";
+        } elseif (is_null($param)) {
+            $param = "NULL";
         }
-        echo "</table>";
-    } else {
-        // Nessun risultato trovato
-        $msg = 'Nessun risultato trovato per i criteri di ricerca forniti.';
     }
-
-    $pagina = "index.php"; // Puoi reindirizzare a una pagina di risultati, se necessario
+    return vsprintf(str_replace("?", "%s", $query), $params);
 }
-
-
-
-
-
-
 
 ?>

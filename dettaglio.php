@@ -1,4 +1,5 @@
 <?php
+include("common/check_session.php");
 include("common/connection.php");
 include("common/popup.php");
 require_once 'lib/phpqrcode/qrlib.php';
@@ -9,11 +10,19 @@ if (!isset($_GET['Commessa'])) {
     exit;
 }
 
+// Verifica se l'anno della commessa è stato passato correttamente
+if (!isset($_GET['Anno'])) {
+    header("Location: index.php?msg=Anno mancante");
+    exit;
+}
+
+
 global $conn;
+$anno = $_GET['Anno'];
 $commessa = $_GET['Commessa'];
 
 // Prepara la query con un parametro per il numero della commessa
-$query = "SELECT * FROM `commessa` WHERE Commessa = ?";
+$query = "SELECT * FROM `commessa` WHERE Anno = ? And Commessa = ?";
 
 // Prepara la dichiarazione
 $stmt = $conn->prepare($query);
@@ -24,7 +33,7 @@ if ($stmt === false) {
 }
 
 // Associa il parametro (tipologia 's' per stringa) e esegui la query
-$stmt->bind_param("s", $commessa); // 's' sta per stringa
+$stmt->bind_param("is", $anno, $commessa); // 's' sta per stringa
 $stmt->execute();
 
 // Ottieni il risultato
@@ -40,7 +49,7 @@ if ($result->num_rows === 0) {
 $row = $result->fetch_assoc();
 $cliente = $row['cliente'];
 $motore = $row['motore'];
-$directory = "data/$commessa/";
+$directory = "data/$anno/$commessa/";
 
 //Genero il QR
 generaQR($directory);
@@ -61,7 +70,6 @@ if (is_dir($directory)) {
 
 //Leggo l'elenco dei responsabili
 $queryResp = "SELECT * FROM `responsabile`";
-$resResp = $conn->query($queryResp);
 
 function generaQR($tempDir)
 {
@@ -80,6 +88,7 @@ function generaQR($tempDir)
 
     return $fileName;
 }
+
 ?>
 <!doctype html>
 <html lang="en">
@@ -111,11 +120,16 @@ function generaQR($tempDir)
             <div class="col-md-6">
                 <div class="card">
                     <div class="card-header">
-                        <h4 class="p-2 m-0">Modifica Commessa</h4>
+                        <h4 class="p-2 m-0">Modifica Commessa #<?= $row['commessa'] ?> del <?= $row['anno'] ?></h4>
                     </div>
                     <div class="card-body main d-flex justify-content flex-column justify-content-center">
                         <form class="mb-3 d-flex justify-content flex-column justify-content-center"
                             enctype="multipart/form-data" action="registra.php" method="post">
+                            <input type="hidden" class="form-control mb-2" name="Anno" id="Anno" min="0"
+                                value="<?= isset($anno) ? htmlspecialchars($anno) : '' ?>" required />
+                            <input type="hidden" class="form-control mb-2" name="Commessa" id="Commessa" min="0"
+                                value="<?= isset($commessa) ? htmlspecialchars($commessa) : '' ?>" required />
+
 
                             <div class="row mb-3">
                                 <!-- Label con larghezza minima di 200px -->
@@ -131,16 +145,6 @@ function generaQR($tempDir)
 
                             <div class="row mb-3">
                                 <div class="col-12 col-md-4">
-                                    <label for="Commessa" class="form-label w-100 mt-2">Numero Commessa</label>
-                                </div>
-                                <div class="col-12 col-md-8">
-                                    <input type="number" class="form-control mb-2" name="Commessa" id="Commessa" min="0"
-                                        value="<?= isset($commessa) ? htmlspecialchars($commessa) : '' ?>" required />
-                                </div>
-                            </div>
-
-                            <div class="row mb-3">
-                                <div class="col-12 col-md-4">
                                     <label for="Motore" class="form-label w-100 mt-2">Numero Motore</label>
                                 </div>
                                 <div class="col-12 col-md-8">
@@ -151,14 +155,35 @@ function generaQR($tempDir)
 
                             <div class="row mb-3">
                                 <div class="col-12 col-md-4">
-                                    <label for="Responsabile" class="form-label w-100 mt-2">Responsabile</label>
+                                    <label for="RespMont" class="form-label w-100 mt-2">Resp. Montaggio</label>
                                 </div>
                                 <div class="col-12 col-md-8">
-                                    <select class="form-control mb-2" name="Responsabile" id="Responsabile">
-                                        <option value="Nessuno" <?= ($row['id_responsabile'] == '') ? 'selected' : ''; ?>>Nessuno</option>
+                                    <select class="form-control mb-2" name="RespMont" id="RespMont">
+                                        <option value="Nessuno" <?= ($row['id_responsabile_mont'] == '') ? 'selected' : ''; ?>>Nessuno</option>
                                         <!-- Ciclo i responsabili per scriverli nella selezione -->
+                                        <?php $resResp = $conn->query($queryResp); ?>
                                         <?php while ($rowResp = $resResp->fetch_assoc()): ?>
-                                            <option value="<?= $rowResp['id']?>" <?= ($row['id_responsabile'] == $rowResp['id']) ? 'selected' : ''; ?>>
+                                            <option value="<?= $rowResp['id'] ?>"
+                                                <?= ($row['id_responsabile_mont'] == $rowResp['id']) ? 'selected' : ''; ?>>
+                                                <?= htmlspecialchars($rowResp['nome']) . ' ' . htmlspecialchars($rowResp['cognome']) ?>
+                                            </option>
+                                        <?php endwhile; ?>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-12 col-md-4">
+                                    <label for="RespSmont" class="form-label w-100 mt-2">Resp. Smontaggio</label>
+                                </div>
+                                <div class="col-12 col-md-8">
+                                    <select class="form-control mb-2" name="RespSmont" id="RespSmont">
+                                        <option value="Nessuno" <?= ($row['id_responsabile_smont'] == '') ? 'selected' : ''; ?>>Nessuno</option>
+                                        <!-- Ciclo i responsabili per scriverli nella selezione -->
+                                        <?php $resResp = $conn->query($queryResp); ?>
+                                        <?php while ($rowResp = $resResp->fetch_assoc()): ?>
+                                            <option value="<?= $rowResp['id'] ?>"
+                                                <?= ($row['id_responsabile_smont'] == $rowResp['id']) ? 'selected' : ''; ?>>
                                                 <?= htmlspecialchars($rowResp['nome']) . ' ' . htmlspecialchars($rowResp['cognome']) ?>
                                             </option>
                                         <?php endwhile; ?>
@@ -187,11 +212,55 @@ function generaQR($tempDir)
                             </div>
 
                             <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <input class="btn w-100 mt-2" type="submit" value="Elimina" name="action" onclick="return confirm('Sei sicuro di voler eliminare questa commessa?')">
+                                <div class="col-12 col-md-4">
+                                    <label for="DataInizioMont" class="form-label w-100 mt-2">Data Inizio Mont.</label>
                                 </div>
+                                <div class="col-12 col-md-8">
+                                    <input type="date" class="form-control mb-2" name="DataInizioMont"
+                                        id="DataInizioMont"
+                                        value="<?= isset($row['data_inizio_mont']) ? htmlspecialchars($row['data_inizio_mont']) : '' ?>" />
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-12 col-md-4">
+                                    <label for="DataFineMont" class="form-label w-100 mt-2">Data Fine Mont.</label>
+                                </div>
+                                <div class="col-12 col-md-8">
+                                    <input type="date" class="form-control mb-2" name="DataFineMont" id="DataFineMont"
+                                        value="<?= isset($row['data_fine_mont']) ? htmlspecialchars($row['data_fine_mont']) : '' ?>" />
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-12 col-md-4">
+                                    <label for="DataInizioSmont" class="form-label w-100 mt-2">Data Inizio
+                                        Smont.</label>
+                                </div>
+                                <div class="col-12 col-md-8">
+                                    <input type="date" class="form-control mb-2" name="DataInizioSmont"
+                                        id="DataInizioSmont"
+                                        value="<?= isset($row['data_inizio_smont']) ? htmlspecialchars($row['data_inizio_smont']) : '' ?>" />
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-12 col-md-4">
+                                    <label for="DataFineSmont" class="form-label w-100 mt-2">Data Fine Smont.</label>
+                                </div>
+                                <div class="col-12 col-md-8">
+                                    <input type="date" class="form-control mb-2" name="DataFineSmont" id="DataFineSmont"
+                                        value="<?= isset($row['data_fine_smont']) ? htmlspecialchars($row['data_fine_smont']) : '' ?>" />
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">                                
                                 <div class="col-md-6">
                                     <input class="btn w-100 mt-2" type="submit" value="Modifica" name="action">
+                                </div>
+                                <div class="col-md-6">
+                                    <input class="btn w-100 mt-2" type="submit" value="Elimina" name="action"
+                                        onclick="return confirm('Sei sicuro di voler eliminare questa commessa?')">
                                 </div>
                             </div>
                         </form>
@@ -200,10 +269,11 @@ function generaQR($tempDir)
                         <h3>Aggiungi nuovi file</h3>
                         <form action="gestione_file.php" method="post" enctype="multipart/form-data" class="mb-5"
                             onsubmit="return validateFileSize();">
-                            <input type="hidden" name="commessa" value="<?php echo $commessa; ?>">
+                            <input type="hidden" name="Commessa" value="<?php echo $commessa; ?>">
+                            <input type="hidden" name="Anno" value="<?php echo $anno; ?>">
                             <div class="mb-3">
-                                <label for="file" class="form-label">Seleziona i file da caricare</label>
-                                <input type="file" class="form-control" name="file[]" id="file" multiple
+                                <label for="files" class="form-label">Seleziona i file da caricare</label>
+                                <input type="file" class="form-control" name="files[]" id="files" multiple
                                     accept="image/*,video/*">
                                 <small class="text-muted">La dimensione massima consentita per ogni file è di 10
                                     MB.</small>
@@ -253,7 +323,8 @@ function generaQR($tempDir)
                                     <div class="card-body text-center">
                                         <form action="gestione_file.php" method="post"
                                             onsubmit="return confirmDelete('<?php echo htmlspecialchars($file); ?>');">
-                                            <input type="hidden" name="commessa" value="<?php echo $commessa; ?>">
+                                            <input type="hidden" name="Commessa" value="<?php echo $commessa; ?>">
+                                            <input type="hidden" name="Anno" value="<?php echo $anno; ?>">
                                             <input type="hidden" name="elimina_file" value="<?php echo $file; ?>">
                                             <button type="submit" class="btn btn-danger btn-sm w-100" style="min-width:auto;"
                                                 <?= str_contains($file, "qr_") ? "disabled" : "" ?>>Elimina</button>
