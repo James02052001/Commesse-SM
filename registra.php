@@ -38,7 +38,6 @@ if ($pagina != "") {
     exit; // Termina lo script per assicurarti che il redirect avvenga immediatamente
 }
 
-
 function Salva(&$pagina, &$msg)
 {
     global $conn;
@@ -91,6 +90,9 @@ function Salva(&$pagina, &$msg)
     $result = $stmt->execute();
 
     if ($result) {
+        $queryLog = composeQuery($query, [$anno, $commessa, $cliente, $motore, $respMont, $respSmont, $dataInizio, $dataFine, $dataInizioMont, $dataFineMont, $dataInizioSmont, $dataFineSmont]);
+        writeLog($conn, "Inserimento commessa $commessa dell'anno $anno effettuato con successo", $queryLog, $_SESSION['IdUtente']);
+
         $directory = "data/$anno/$commessa/";
 
         // Se la directory esiste, cancellala prima di crearne una nuova
@@ -107,6 +109,7 @@ function Salva(&$pagina, &$msg)
             for ($i = 0; $i < count($files["name"]); $i++) {
                 $fileExt = strtolower(pathinfo($files["name"][$i], PATHINFO_EXTENSION));
                 move_uploaded_file($files["tmp_name"][$i], $directory . "$i.$fileExt");
+                writeLog($conn, "File caricato: " . $files["name"][$i] . " nella commessa $commessa dell'anno $anno", "Upload file", $_SESSION['IdUtente']);
             }
             $msg = 'Salvataggio effettuato correttamente!';
         } else {
@@ -115,6 +118,8 @@ function Salva(&$pagina, &$msg)
 
         $pagina = "inserimento.php";
     } else {
+        $queryLog = composeQuery($query, [$anno, $commessa, $cliente, $motore, $respMont, $respSmont, $dataInizio, $dataFine, $dataInizioMont, $dataFineMont, $dataInizioSmont, $dataFineSmont]);
+        writeLog($conn, "Errore durante l'inserimento della commessa $commessa dell'anno $anno", $queryLog, $_SESSION['IdUtente']);
         $msg = 'Errore nel salvataggio: ' . $stmt->error;
         $pagina = "inserimento.php";
     }
@@ -205,10 +210,13 @@ function Modifica(&$pagina, &$msg)
 
     // Controllo se l'esecuzione è andata a buon fine
     if ($result) {
-        // Gestione dei file, se necessario come nel caso della funzione Salva
+        $queryLog = composeQuery($query, [$cliente, $motore, $respMont, $respSmont, $dataInizio, $dataFine, $dataInizioMont, $dataFineMont, $dataInizioSmont, $dataFineSmont, $anno, $commessa]);
+        writeLog($conn, "Modifica commessa $commessa dell'anno $anno effettuata con successo", $queryLog, $_SESSION['IdUtente']);
         $msg = 'Modifica effettuata';
         $pagina = "dettaglio.php?Anno=".$anno."&Commessa=".$commessa;
     } else {
+        $queryLog = composeQuery($query, [$cliente, $motore, $respMont, $respSmont, $dataInizio, $dataFine, $dataInizioMont, $dataFineMont, $dataInizioSmont, $dataFineSmont, $anno, $commessa]);
+        writeLog($conn, "Errore durante la modifica della commessa $commessa dell'anno $anno", $queryLog, $_SESSION['IdUtente']);
         $msg = 'Errore nella modifica: ' . $stmt->error;
         $pagina = "dettaglio.php?Anno=".$anno."&Commessa=".$commessa;
     }
@@ -222,13 +230,13 @@ function Modifica(&$pagina, &$msg)
 function Elimina(&$pagina, &$msg)
 {
     global $conn;
-    global $commessa;
+    global $commessa, $anno;
 
     // Recuperiamo i dati dal form (assumiamo che la funzione Getdata() assegni il valore a $commessa)
     Getdata();
 
     // Prepariamo la query con il segnaposto per il parametro
-    $query = "DELETE FROM `commessa` WHERE `Commessa` = ?";
+    $query = "DELETE FROM `commessa` WHERE `Commessa` = ? AND Anno = ?";
 
     // Prepara la query
     $stmt = $conn->prepare($query);
@@ -241,18 +249,20 @@ function Elimina(&$pagina, &$msg)
     }
 
     // Associa il parametro (in questo caso, una stringa per il valore di $commessa)
-    $stmt->bind_param("s", $commessa);
+    $stmt->bind_param("si", $commessa, $anno);
 
     // Esegui la query
     $result = $stmt->execute();
 
     // Verifica il risultato dell'esecuzione
     if ($result) {
-        // Se la query è andata a buon fine
+        $queryLog = composeQuery($query, [$commessa, $anno]);
+        writeLog($conn, "Cancellazione commessa $commessa dell'anno $anno effettuata con successo", $queryLog, $_SESSION['IdUtente']);
         $msg = 'Eliminazione effettuata';
         $pagina = "inserimento.php";
     } else {
-        // Se c'è stato un errore
+        $queryLog = composeQuery($query, [$commessa, $anno]);
+        writeLog($conn, "Errore durante la cancellazione della commessa $commessa dell'anno $anno", $queryLog, $_SESSION['IdUtente']);
         $msg = 'Errore nell\'eliminazione: ' . $stmt->error;
         $pagina = "inserimento.php";
     }

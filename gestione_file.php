@@ -21,6 +21,7 @@ if (isset($_POST['Commessa']) && isset($_POST['Anno'])) {
         // Verifica che il file esista prima di eliminarlo
         if (file_exists($filePath)) {
             unlink($filePath); // Elimina il file
+            writeLog($conn, "File eliminato: $file nella commessa $commessa dell'anno $anno", "Delete file", $_SESSION['IdUtente']);
             $message = "File $file eliminato correttamente.";
         } else {
             $message = "Errore: il file $file non esiste.";
@@ -64,6 +65,7 @@ if (isset($_POST['Commessa']) && isset($_POST['Anno'])) {
 
                 // Sposta il file caricato nella directory con il nuovo nome progressivo
                 move_uploaded_file($newFiles['tmp_name'][$i], $directory . $newFileName);
+                writeLog($conn, "File caricato: " . $newFiles['name'][$i] . " nella commessa $commessa dell'anno $anno", "Upload file", $_SESSION['IdUtente']);
             }
         }
 
