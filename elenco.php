@@ -21,8 +21,7 @@ $query = "SELECT commessa.* "
     ." FROM commessa "
     ." LEFT OUTER JOIN responsabile respMont ON commessa.id_responsabile_mont = respMont.id "
     ." LEFT OUTER JOIN responsabile respSmont ON commessa.id_responsabile_smont = respSmont.id "
-    ." WHERE 1=1"
-    ." ORDER BY commessa.anno DESC, commessa.commessa DESC";
+    ." WHERE 1=1";
 // Array per bind dei parametri
 $where = "";
 $params = [];

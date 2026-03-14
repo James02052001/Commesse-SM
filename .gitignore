@@ -1,0 +1,8 @@
+# Ignora tutti i file dentro data
+data/**
+
+# Non ignorare le cartelle dentro data
+!data/**/
+
+# (opzionale ma consigliato) tieni un file placeholder
+!data/**/.gitkeep

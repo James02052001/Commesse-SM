@@ -9,7 +9,6 @@ $row = null; $msg = "";
 if (ControlloCredenziali($username, $password)) {
     $_SESSION['username'] = $username;
     $_SESSION['Nome'] = $row['Nome'];
-    $_SESSION['IdUtente'] = $row['id'];
 
     header("Location:inserimento.php");
     exit();
