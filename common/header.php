@@ -21,10 +21,6 @@
                     <a class="nav-link rounded-3 <?= $pageName == 'elenco.php' ? 'active' : '' ?>" href="elenco.php"
                         aria-current="page"> Elenco <span class="visually-hidden">(current)</span></a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link rounded-3 <?= $pageName == 'statistiche.php' ? 'active' : '' ?>" href="statistiche.php"
-                        aria-current="page"> Statistiche <span class="visually-hidden">(current)</span></a>
-                </li>
             </ul>
         </div>
         <div class="welcome d-flex justify-content-between align-items-center">
