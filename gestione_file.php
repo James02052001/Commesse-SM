@@ -117,7 +117,7 @@ function scaricaFile($directory, $anno, $commessa) {
     }
 }
 
-// Funzione per scaricare tutti i file in un archivio ZIP
+// Funzione per scaricare tutti i file: mostra una pagina con link di download individuali
 function scaricaTutti($directory, $anno, $commessa) {
     // Ottieni la lista dei file nella directory
     $files = scandir($directory);
@@ -134,37 +134,57 @@ function scaricaTutti($directory, $anno, $commessa) {
         exit;
     }
 
-    // Nome del file ZIP
-    $zipFileName = "files_commessa_$commessa.zip";
-    $zipFilePath = sys_get_temp_dir() . "/" . $zipFileName;
-
-    // Crea l'archivio ZIP
-    $zip = new ZipArchive();
-    if ($zip->open($zipFilePath, ZipArchive::CREATE) !== TRUE) {
-        $message = "Errore nella creazione dell'archivio ZIP.";
-        header("Location: dettaglio.php?Anno=$anno&Commessa=$commessa&msg=" . urlencode($message));
-        exit;
-    }
-
-    // Aggiungi ciascun file al ZIP
+    // Crea una pagina HTML con link di download per ciascun file e auto-download
+    echo '<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scarica File Commessa</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { padding: 20px; }
+        .file-link { display: block; margin: 10px 0; padding: 15px; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 5px; text-decoration: none; color: #007bff; font-size: 18px; text-align: center; }
+        .file-link:hover { background: #e9ecef; }
+        .downloading { background: #d4edda; color: #155724; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="mb-4">Scarica File per Commessa ' . htmlspecialchars($commessa) . '</h1>
+        <p class="mb-4" id="status">Download automatico in corso... I file verranno scaricati uno alla volta.</p>';
+    
+    $index = 0;
     foreach ($files as $file) {
-        $filePath = $directory . $file;
-        if (file_exists($filePath) && !preg_match('/^qr_/', $file)) {
-            $zip->addFile($filePath, $file);
-        }
+        $downloadUrl = 'gestione_file.php?scarica_file=' . urlencode($file) . '&Anno=' . urlencode($anno) . '&Commessa=' . urlencode($commessa);
+        echo '<a href="' . $downloadUrl . '" class="file-link" id="link-' . $index . '" download="' . htmlspecialchars($file) . '">' . htmlspecialchars($file) . '</a>';
+        $index++;
     }
-    $zip->close();
-
-    // Imposta gli header per il download del ZIP
-    header('Content-Description: File Transfer');
-    header('Content-Type: application/zip');
-    header('Content-Disposition: attachment; filename="' . $zipFileName . '"');
-    header('Expires: 0');
-    header('Cache-Control: must-revalidate');
-    header('Pragma: public');
-    header('Content-Length: ' . filesize($zipFilePath));
-    readfile($zipFilePath);
-    unlink($zipFilePath); // Elimina il file ZIP temporaneo
-    exit; // Assicurati di interrompere l'esecuzione
+    
+    echo '<br><a href="dettaglio.php?Anno=' . $anno . '&Commessa=' . $commessa . '" class="btn btn-secondary">Torna alla Commessa</a>
+    </div>
+    <script>
+        var links = document.querySelectorAll(".file-link");
+        var index = 0;
+        var status = document.getElementById("status");
+        
+        function downloadNext() {
+            if (index < links.length) {
+                status.textContent = "Scaricando: " + links[index].textContent;
+                links[index].classList.add("downloading");
+                links[index].click();
+                index++;
+                setTimeout(downloadNext, 2000); // 2 secondi tra download
+            } else {
+                status.textContent = "Download completato!";
+            }
+        }
+        
+        // Avvia il download automatico dopo 1 secondo
+        setTimeout(downloadNext, 1000);
+    </script>
+</body>
+</html>';
+    exit;
 }
 ?>
