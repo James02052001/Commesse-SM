@@ -263,7 +263,18 @@ function generaQR($tempDir)
                                         onclick="return confirm('Sei sicuro di voler eliminare questa commessa?')">
                                 </div>
                             </div>
+
                         </form>
+
+                        <!-- Scarica tutti i file -->
+                        <div class="col-12 mt-2">
+                            <form action="gestione_file.php" method="post" style="display:inline;">
+                                <input type="hidden" name="Commessa" value="<?php echo htmlspecialchars($commessa); ?>">
+                                <input type="hidden" name="Anno" value="<?php echo htmlspecialchars($anno); ?>">
+                                <input type="hidden" name="scarica_tutti" value="1">
+                                <button type="submit" class="btn btn-secondary w-100">Scarica tutti i file</button>
+                            </form>
+                        </div>
 
                         <!-- Aggiunta nuovi file -->
                         <h3>Aggiungi nuovi file</h3>
@@ -321,13 +332,18 @@ function generaQR($tempDir)
 
                                     <!-- Form di eliminazione -->
                                     <div class="card-body text-center">
-                                        <form action="gestione_file.php" method="post"
-                                            onsubmit="return confirmDelete('<?php echo htmlspecialchars($file); ?>');">
+                                        <form action="gestione_file.php" method="post">
                                             <input type="hidden" name="Commessa" value="<?php echo $commessa; ?>">
                                             <input type="hidden" name="Anno" value="<?php echo $anno; ?>">
-                                            <input type="hidden" name="elimina_file" value="<?php echo $file; ?>">
-                                            <button type="submit" class="btn btn-danger btn-sm w-100" style="min-width:auto;"
-                                                <?= str_contains($file, "qr_") ? "disabled" : "" ?>>Elimina</button>
+
+                                            <div class="d-flex flex-row gap-2">
+                                                <button type="submit" class="btn btn-danger btn-sm w-100" style="min-width:auto;"
+                                                    name="elimina_file" value="<?php echo $file; ?>"
+                                                    <?= str_contains($file, "qr_") ? "disabled" : "" ?>
+                                                    onclick="return confirmDelete('<?php echo htmlspecialchars($file); ?>');">Elimina</button>
+                                                <button type="submit" class="btn btn-secondary btn-sm w-100"
+                                                    name="scarica_file" value="<?php echo $file; ?>">Scarica</button>
+                                            </div>
                                         </form>
                                     </div>
                                 </div>

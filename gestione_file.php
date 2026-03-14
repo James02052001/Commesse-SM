@@ -72,6 +72,70 @@ if (isset($_POST['Commessa']) && isset($_POST['Anno'])) {
         header("Location: dettaglio.php?Anno=$anno&Commessa=$commessa&msg=" . urlencode($message));
         exit; // Assicurati di interrompere l'esecuzione
     }
+
+    // Gestione download di 1 file specifico
+    if (isset($_POST['scarica_file'])) {
+        $file = $_POST['scarica_file'];
+        $filePath = $directory . $file;
+
+        // Verifica che il file esista prima di scaricarlo
+        if (file_exists($filePath)) {
+            header('Content-Description: File Transfer');
+            header('Content-Type: application/octet-stream');
+            header('Content-Disposition: attachment; filename="' . basename($filePath) . '"');
+            header('Expires: 0');
+            header('Cache-Control: must-revalidate');
+            header('Pragma: public');
+            header('Content-Length: ' . filesize($filePath));
+            readfile($filePath);
+            exit; // Assicurati di interrompere l'esecuzione
+        } else {
+            $message = "Errore: il file $file non esiste.";
+            header("Location: dettaglio.php?Anno=$anno&Commessa=$commessa&msg=" . urlencode($message));
+            exit; // Assicurati di interrompere l'esecuzione
+        }
+    }
+    
+    //Gestione download di tutti i file in un archivio ZIP
+    if (isset($_POST['scarica_tutti'])) {
+        $files = scandir($directory);
+        $files = array_diff($files, array('.', '..')); // Rimuove le directory speciali
+
+        if (empty($files)) {
+            $message = "Nessun file da scaricare.";
+            header("Location: dettaglio.php?Anno=$anno&Commessa=$commessa&msg=" . urlencode($message));
+            exit;
+        }
+
+        $zipFileName = "files_commessa_$commessa.zip";
+        $zipFilePath = sys_get_temp_dir() . "/" . $zipFileName;
+
+        $zip = new ZipArchive();
+        if ($zip->open($zipFilePath, ZipArchive::CREATE) !== TRUE) {
+            $message = "Errore nella creazione dell'archivio ZIP.";
+            header("Location: dettaglio.php?Anno=$anno&Commessa=$commessa&msg=" . urlencode($message));
+            exit;
+        }
+
+        foreach ($files as $file) {
+            $filePath = $directory . $file;
+            if (file_exists($filePath) && !preg_match('/^qr_/', $file)) {
+                $zip->addFile($filePath, $file);
+            }
+        }
+        $zip->close();
+
+        header('Content-Description: File Transfer');
+        header('Content-Type: application/zip');
+        header('Content-Disposition: attachment; filename="' . $zipFileName . '"');
+        header('Expires: 0');
+        header('Cache-Control: must-revalidate');
+        header('Pragma: public');
+        header('Content-Length: ' . filesize($zipFilePath));
+        readfile($zipFilePath);
+        unlink($zipFilePath); // Elimina il file ZIP temporaneo
+        exit; // Assicurati di interrompere l'esecuzione
+    }
 } else {
     echo "Errore: ID Commessa o Anno mancante.";
     exit;

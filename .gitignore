@@ -1,5 +1,6 @@
 # Ignora tutti i file dentro data
 data/**
+lib/phpqrcode/*.png-errors.txt
 
 # Non ignorare le cartelle dentro data
 !data/**/
