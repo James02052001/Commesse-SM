@@ -47,7 +47,7 @@ function Salva(&$pagina, &$msg)
     Getdata();
 
     // Controlliamo se la commessa esiste già
-    $query = "SELECT * FROM `commessa` WHERE Commessa = ?";
+    $query = "SELECT * FROM `commessa` WHERE Commessa = ? AND Anno = ?";
     $stmt = $conn->prepare($query);
 
     if (!$stmt) {
@@ -57,7 +57,7 @@ function Salva(&$pagina, &$msg)
     }
 
     // Lega il parametro
-    $stmt->bind_param("s", $commessa);
+    $stmt->bind_param("si", $commessa, $anno);
 
     // Eseguiamo la query di selezione
     $stmt->execute();
