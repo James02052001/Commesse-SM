@@ -10,6 +10,7 @@ $respMont = ""; $respSmont = "";
 $dataInizio = ""; $dataFine = "";
 $dataInizioMont = ""; $dataFineMont = "";
 $dataInizioSmont = ""; $dataFineSmont = "";
+$note = "";
 $files = "";
 
 $pagina = "";
@@ -73,8 +74,8 @@ function Salva(&$pagina, &$msg)
     }
 
     // Prepariamo la query per l'inserimento
-    $query = "INSERT INTO `commessa` (`Anno`, `Commessa`, `cliente`, `motore`, `id_responsabile_mont`, `id_responsabile_smont`, `data_inizio`, `data_fine`, `data_inizio_mont`, `data_fine_mont`, `data_inizio_smont`, `data_fine_smont`) 
-                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    $query = "INSERT INTO `commessa` (`Anno`, `Commessa`, `cliente`, `motore`, `id_responsabile_mont`, `id_responsabile_smont`, `data_inizio`, `data_fine`, `data_inizio_mont`, `data_fine_mont`, `data_inizio_smont`, `data_fine_smont`, `note`) 
+                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     $stmt = $conn->prepare($query);
 
     // Controllo se la query di inserimento è stata preparata correttamente
@@ -85,7 +86,7 @@ function Salva(&$pagina, &$msg)
     }
 
     // Lega i parametri alla query
-    $stmt->bind_param("isssiissssss",$anno, $commessa, $cliente, $motore, $respMont, $respSmont, $dataInizio, $dataFine, $dataInizioMont, $dataFineMont, $dataInizioSmont, $dataFineSmont);
+    $stmt->bind_param("isssiisssssss",$anno, $commessa, $cliente, $motore, $respMont, $respSmont, $dataInizio, $dataFine, $dataInizioMont, $dataFineMont, $dataInizioSmont, $dataFineSmont, $note);
 
     // Esegui l'inserimento
     $result = $stmt->execute();
@@ -149,7 +150,7 @@ function deleteDirectory($dir)
 
 function Getdata()
 {
-    global $anno, $commessa, $motore, $cliente, $respMont, $respSmont, $dataInizio, $dataFine, $dataInizioMont, $dataFineMont, $dataInizioSmont, $dataFineSmont, $files;
+    global $anno, $commessa, $motore, $cliente, $respMont, $respSmont, $dataInizio, $dataFine, $dataInizioMont, $dataFineMont, $dataInizioSmont, $dataFineSmont, $note, $files;
     $anno = isset($_POST['Anno']) ? $_POST['Anno'] : "";
     $commessa = isset($_POST['Commessa']) ? $_POST['Commessa'] : "";
     $cliente = isset($_POST['Cliente']) ? $_POST['Cliente'] : "";    
@@ -165,13 +166,15 @@ function Getdata()
     $dataInizioSmont = isset($_POST['DataInizioSmont']) ? $_POST['DataInizioSmont'] : "";
     $dataFineSmont = isset($_POST['DataFineSmont']) ? $_POST['DataFineSmont'] : "";
 
+    $note = isset($_POST['Note']) ? $_POST['Note'] : "";
+
     $files = isset($_FILES["files"]) ? $_FILES["files"] : "NULL";
 }
 
 function Modifica(&$pagina, &$msg)
 {
     global $conn;
-    global $anno, $commessa, $cliente, $motore, $respMont, $respSmont, $dataInizio, $dataFine, $dataInizioMont, $dataFineMont, $dataInizioSmont, $dataFineSmont, $files;
+    global $anno, $commessa, $cliente, $motore, $respMont, $respSmont, $dataInizio, $dataFine, $dataInizioMont, $dataFineMont, $dataInizioSmont, $dataFineSmont, $note, $files;
 
     Getdata();
 
@@ -187,6 +190,7 @@ function Modifica(&$pagina, &$msg)
               , `data_fine_mont` = ?
               , `data_inizio_smont` = ?
               , `data_fine_smont` = ?
+              , `note` = ?
               WHERE `anno` = ? AND `commessa` = ?";
     $stmt = $conn->prepare($query);
 
@@ -198,7 +202,7 @@ function Modifica(&$pagina, &$msg)
     }
 
     // Lega i parametri alla query
-    $stmt->bind_param("ssiissssssis", $cliente, $motore, $respMont, $respSmont, $dataInizio, $dataFine, $dataInizioMont, $dataFineMont, $dataInizioSmont, $dataFineSmont, $anno, $commessa);
+    $stmt->bind_param("ssiisssssssis", $cliente, $motore, $respMont, $respSmont, $dataInizio, $dataFine, $dataInizioMont, $dataFineMont, $dataInizioSmont, $dataFineSmont, $note, $anno, $commessa);
 
     // Esegui l'UPDATE
     $result = $stmt->execute();

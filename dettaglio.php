@@ -254,6 +254,15 @@ function generaQR($tempDir)
                                 </div>
                             </div>
 
+                            <div class="row mb-3">
+                                <div class="col-12 col-md-4">
+                                    <label for="Note" class="form-label w-100 mt-2">Note</label>
+                                </div>
+                                <div class="col-12 col-md-8">
+                                    <textarea class="form-control mb-2" name="Note" id="Note" rows="4" placeholder="Inserisci eventuali note..."><?= isset($row['note']) ? htmlspecialchars($row['note']) : '' ?></textarea>
+                                </div>
+                            </div>
+
                             <div class="row mb-3">                                
                                 <div class="col-md-6">
                                     <input class="btn w-100 mt-2" type="submit" value="Modifica" name="action">
