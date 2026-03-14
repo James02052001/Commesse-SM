@@ -263,11 +263,10 @@ function generaQR($tempDir)
                                         onclick="return confirm('Sei sicuro di voler eliminare questa commessa?')">
                                 </div>
                             </div>
-
                         </form>
 
                         <!-- Scarica tutti i file -->
-                        <div class="col-12 mt-2">
+                        <div class="col-12 mt-2" style="margin-top: -20px !important;">
                             <form action="gestione_file.php" method="post" style="display:inline;">
                                 <input type="hidden" name="Commessa" value="<?php echo htmlspecialchars($commessa); ?>">
                                 <input type="hidden" name="Anno" value="<?php echo htmlspecialchars($anno); ?>">
