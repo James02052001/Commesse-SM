@@ -100,10 +100,11 @@ function scaricaFile($directory, $anno, $commessa) {
 
     // Verifica che il file esista prima di scaricarlo
     if (file_exists($filePath)) {
-        // Imposta gli header per il download del file
+        // Imposta gli header per il download del file con nome prefissato
+        $newFileName = 'commessa_' . $commessa . '_' . basename($filePath);
         header('Content-Description: File Transfer');
         header('Content-Type: application/octet-stream');
-        header('Content-Disposition: attachment; filename="' . basename($filePath) . '"');
+        header('Content-Disposition: attachment; filename="' . $newFileName . '"');
         header('Expires: 0');
         header('Cache-Control: must-revalidate');
         header('Pragma: public');
@@ -135,56 +136,66 @@ function scaricaTutti($directory, $anno, $commessa) {
     }
 
     // Crea una pagina HTML con link di download per ciascun file e auto-download
-    echo '<!DOCTYPE html>
-<html lang="it">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scarica File Commessa</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body { padding: 20px; }
-        .file-link { display: block; margin: 10px 0; padding: 15px; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 5px; text-decoration: none; color: #007bff; font-size: 18px; text-align: center; }
-        .file-link:hover { background: #e9ecef; }
-        .downloading { background: #d4edda; color: #155724; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1 class="mb-4">Scarica File per Commessa ' . htmlspecialchars($commessa) . '</h1>
-        <p class="mb-4" id="status">Download automatico in corso... I file verranno scaricati uno alla volta.</p>';
-    
-    $index = 0;
-    foreach ($files as $file) {
-        $downloadUrl = 'gestione_file.php?scarica_file=' . urlencode($file) . '&Anno=' . urlencode($anno) . '&Commessa=' . urlencode($commessa);
-        echo '<a href="' . $downloadUrl . '" class="file-link" id="link-' . $index . '" download="' . htmlspecialchars($file) . '">' . htmlspecialchars($file) . '</a>';
-        $index++;
-    }
-    
-    echo '<br><a href="dettaglio.php?Anno=' . $anno . '&Commessa=' . $commessa . '" class="btn btn-secondary">Torna alla Commessa</a>
-    </div>
-    <script>
-        var links = document.querySelectorAll(".file-link");
-        var index = 0;
-        var status = document.getElementById("status");
-        
-        function downloadNext() {
-            if (index < links.length) {
-                status.textContent = "Scaricando: " + links[index].textContent;
-                links[index].classList.add("downloading");
-                links[index].click();
-                index++;
-                setTimeout(downloadNext, 2000); // 2 secondi tra download
-            } else {
-                status.textContent = "Download completato!";
+    ?>
+    <!DOCTYPE html>
+    <html lang="it">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Scarica File Commessa</title>
+        <!-- Bootstrap CSS -->
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous" />
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css">
+        <!-- Stili personalizzati -->
+        <link rel="stylesheet" href="css/style.css">
+        <link rel="stylesheet" href="css/dettaglio.css">
+        <style>
+            .file-link { display: block; margin: 10px 0; padding: 15px; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 5px; text-decoration: none; color: #007bff; font-size: 18px; text-align: center; }
+            .file-link:hover { background: #e9ecef; }
+            .downloading { background: #d4edda; color: #155724; }
+        </style>
+    </head>
+    <body>
+        <?php include("common/header.php"); ?>
+        <main class="p-2 d-flex text-center justify-content-center">
+            <div class="container">
+                <h1 class="mb-4">Scarica File per Commessa <?php echo htmlspecialchars($commessa); ?></h1>
+                <p class="mb-4" id="status">Download automatico in corso... I file verranno scaricati uno alla volta.</p>
+                <?php
+                $index = 0;
+                foreach ($files as $file) {
+                    $downloadUrl = 'gestione_file.php?scarica_file=' . urlencode($file) . '&Anno=' . urlencode($anno) . '&Commessa=' . urlencode($commessa);
+                    $downloadName = 'commessa_' . $commessa . '_' . $file;
+                    echo '<a href="' . $downloadUrl . '" class="file-link" id="link-' . $index . '" download="' . htmlspecialchars($downloadName) . '">' . htmlspecialchars($file) . '</a>';
+                    $index++;
+                }
+                ?>
+                <br><a href="dettaglio.php?Anno=<?php echo $anno; ?>&Commessa=<?php echo $commessa; ?>" class="btn btn-secondary">Torna alla Commessa</a>
+            </div>
+        </main>
+        <script>
+            var links = document.querySelectorAll(".file-link");
+            var index = 0;
+            var status = document.getElementById("status");
+            
+            function downloadNext() {
+                if (index < links.length) {
+                    status.textContent = "Scaricando: " + links[index].textContent;
+                    links[index].classList.add("downloading");
+                    links[index].click();
+                    index++;
+                    setTimeout(downloadNext, 2000); // 2 secondi tra download
+                } else {
+                    status.textContent = "Download completato!";
+                }
             }
-        }
-        
-        // Avvia il download automatico dopo 1 secondo
-        setTimeout(downloadNext, 1000);
-    </script>
-</body>
-</html>';
+            
+            // Avvia il download automatico dopo 1 secondo
+            setTimeout(downloadNext, 1000);
+        </script>
+    </body>
+    </html>
+    <?php
     exit;
 }
 ?>
